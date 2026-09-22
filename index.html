@@ -1,0 +1,379 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>DocZ • IU3 – Configuração de Termos de Uso (CRUD)</title>
+<style>
+  :root{
+    --bg:#f6f7f8; --panel:#ffffff; --ink:#111827; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#2563eb; --accent-2:#65a30d; --rose:#e11d48;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; font:14px/1.35 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background:var(--bg); color:var(--ink)}
+  body.lock-scroll{overflow:hidden}
+  .wrap{padding:16px}
+  .breadcrumb{background:#eef0f2; border:1px solid var(--line); padding:6px 10px; border-radius:10px; margin-bottom:12px; font-size:13px}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; overflow:hidden}
+  .card-h{background:#f3f4f6; border-bottom:1px solid var(--line); padding:8px 12px; font-weight:600; display:flex; align-items:center; justify-content:space-between}
+  .row{display:grid; gap:12px}
+  @media(min-width:900px){ .row.cols-4{grid-template-columns:repeat(4, minmax(0,1fr));} }
+  input, select, textarea{width:100%; border:1px solid var(--line); border-radius:8px; padding:8px 10px; outline:none; background:#fff}
+  input:focus, select:focus, textarea:focus{border-color:#9ca3af; box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+  label{color:#374151; font-size:12px; margin-bottom:4px; display:block}
+  .btn{border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:10px; cursor:pointer}
+  .btn.primary{background:var(--accent); color:#fff; border-color:var(--accent)}
+  .btn.success{background:var(--accent-2); color:#fff; border-color:var(--accent-2)}
+  .btn.rose{background:#fee2e2; color:#b91c1c; border-color:#fecaca}
+  .btn[disabled]{opacity:.5; cursor:not-allowed}
+  .toolbar{display:flex; justify-content:space-between; gap:12px; padding:10px 12px}
+  table{width:100%; border-collapse:separate; border-spacing:0}
+  th, td{padding:10px 12px; text-align:left; border-bottom:1px solid var(--line); vertical-align:top}
+  thead th{color:#4b5563; background:#fff; position:sticky; top:0; z-index:1}
+  tbody tr:hover{background:#f9fafb}
+  .muted{color:var(--muted); font-size:12px}
+  .badge{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line); background:#fff}
+  /* Modal (always on top) */
+  .overlay{position:fixed; inset:0; background:rgba(0,0,0,.45); display:none; align-items:center; justify-content:center; padding:16px; z-index:9999}
+  .overlay.show{display:flex}
+  .modal{width:100%; max-width:920px; background:#fff; border:1px solid var(--line); border-radius:12px; box-shadow:0 20px 60px rgba(0,0,0,.35); overflow:hidden; z-index:10000}
+  .modal-h{display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--line); background:#f3f4f6; font-weight:600}
+  .modal-b{padding:14px}
+  .modal-f{display:flex; gap:8px; justify-content:flex-end; padding:10px 14px; border-top:1px solid var(--line); background:#fff}
+  .grid{display:grid; gap:12px}
+  @media(min-width:900px){ .grid.cols-4{grid-template-columns:repeat(4, minmax(0,1fr));} }
+  .chip{display:inline-flex; align-items:center; gap:8px; margin-right:12px; margin-bottom:6px}
+  .checkbox{width:16px; height:16px}
+  textarea{min-height:180px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px}
+  .right{display:flex; align-items:center; gap:8px}
+</style>
+</head>
+<body>
+  <div class="wrap" id="app-root">
+    <div class="breadcrumb"><span style="opacity:.7">DocZ</span> <span style="margin:0 8px">/</span> <strong>Configuração de Termos de Uso</strong></div>
+
+    <!-- Filtro -->
+    <section class="card">
+      <div class="card-h">Filtro</div>
+      <div class="row cols-4" style="padding:12px">
+        <div>
+          <label for="f-titulo">Título</label>
+          <input id="f-titulo" />
+        </div>
+        <div>
+          <label for="f-versao">Versão</label>
+          <input id="f-versao" />
+        </div>
+        <div>
+          <label for="f-publico">Público/Tipo de Usuário</label>
+          <select id="f-publico">
+            <option value="">Todos</option>
+            <option>Usuário Cliente</option>
+            <option>Usuário SOS</option>
+          </select>
+        </div>
+        <div>
+          <label for="f-status">Status</label>
+          <select id="f-status">
+            <option value="">Todos</option>
+            <option>Publicado</option>
+            <option>Ativo</option>
+            <option>Rascunho</option>
+            <option>Inativo</option>
+          </select>
+        </div>
+      </div>
+      <div class="toolbar">
+        <button class="btn" id="btn-filtrar">Filtrar</button>
+        <div class="right">
+          <span class="muted" id="meta-count"></span>
+          <button class="btn success" id="btn-adicionar">Adicionar Termos</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Lista -->
+    <section class="card" style="margin-top:16px">
+      <div class="card-h">
+        <div>Termos Cadastrados</div>
+        <div class="muted">Mostrar 10 registros</div>
+      </div>
+      <div style="overflow:auto">
+        <table id="grid">
+          <thead>
+            <tr>
+              <th style="width:36px">&nbsp;</th>
+              <th>Título</th>
+              <th>Versão</th>
+              <th>Público</th>
+              <th>Vigência</th>
+              <th>Status</th>
+              <th>Atualizado em</th>
+              <th style="text-align:right; width:220px">Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="toolbar muted">
+        <div>Primeiro • Anterior • <span class="badge">1</span> de 1 • Próximo • Último</div>
+        <div id="meta-count-bottom"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal Editor -->
+  <div class="overlay" id="overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-h">
+        <div id="modal-title">Novo Termos</div>
+        <button class="btn" id="btn-close" aria-label="Fechar">✕</button>
+      </div>
+      <div class="modal-b">
+        <div class="grid cols-4">
+          <div class="col" style="grid-column:span 3">
+            <label for="e-titulo">Título</label>
+            <input id="e-titulo" />
+          </div>
+          <div class="col">
+            <label for="e-versao">Versão</label>
+            <input id="e-versao" />
+          </div>
+
+          <div class="col">
+            <label for="e-vig-ini">Vigência Início</label>
+            <input type="date" id="e-vig-ini" />
+          </div>
+          <div class="col">
+            <label for="e-vig-fim">Vigência Fim</label>
+            <input type="date" id="e-vig-fim" />
+            <div class="muted" style="margin-top:6px">Deixe em branco para Indeterminado</div>
+          </div>
+
+          <div class="col" style="grid-column:1/-1; border:1px solid var(--line); border-radius:10px; padding:12px">
+            <div class="muted" style="font-weight:600; color:#374151; margin-bottom:6px">Público/Tipo de Usuário</div>
+            <label class="chip"><input class="checkbox" type="checkbox" value="Todos" /> Todos</label>
+            <label class="chip"><input class="checkbox" type="checkbox" value="Usuário Cliente" /> Usuário Cliente</label>
+            <label class="chip"><input class="checkbox" type="checkbox" value="Usuário SOS" /> Usuário SOS</label>
+          </div>
+
+          <div class="col" style="grid-column:1/-1; border:1px solid var(--line); border-radius:10px; padding:12px">
+            <div class="muted" style="font-weight:600; color:#374151; margin-bottom:6px">Conteúdo dos Termos</div>
+            <textarea id="e-conteudo"></textarea>
+            <div class="muted" style="display:flex; justify-content:flex-end; margin-top:8px">
+              Máx. 1 anexo PDF • <button class="btn" style="margin-left:8px">anexar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-f">
+        <button class="btn" id="btn-cancelar">Cancelar</button>
+        <button class="btn" id="btn-rascunho">Salvar como rascunho</button>
+        <button class="btn primary" id="btn-publicar">Publicar</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  // Mock de dados
+  let rows = [
+    { id:1, titulo:"Termos de Uso – v3.2", versao:"2026.02", publico:["Todos"], vigenciaIni:"2026-02-01", vigenciaFim:"—", status:"Publicado", atualizadoEm:"2026-02-05 10:22" },
+    { id:2, titulo:"Política de Privacidade – v2.1", versao:"2025.11", publico:["Usuário SOS"], vigenciaIni:"2025-11-10", vigenciaFim:"2026-11-10", status:"Ativo", atualizadoEm:"2025-11-10 09:10" },
+    { id:3, titulo:"Termos de Uso – rascunho", versao:"2026.03-draft", publico:["Usuário Cliente"], vigenciaIni:"—", vigenciaFim:"—", status:"Rascunho", atualizadoEm:"2026-02-04 18:40" },
+  ];
+  const exemploConteudo = `1. Escopo
+Regula o uso do DocZ, incluindo gestão documental, movimentação e auditoria.
+
+2. Acesso e Permissões
+Ações respeitam perfis e permissões por unidade.
+
+3. Registro de Atividades
+Logs de auditoria registram operações com usuário, unidade e carimbo de data/hora.
+
+4. Privacidade
+Dados pessoais tratados conforme a legislação aplicável.
+
+5. Disposições Gerais
+Atualizações podem exigir novo aceite.`;
+
+  // Estado do filtro
+  const filtro = { titulo:"", versao:"", publico:"", status:"" };
+
+  // Elements
+  const tbody = document.querySelector('#grid tbody');
+  const metaCount = document.getElementById('meta-count');
+  const metaCountBottom = document.getElementById('meta-count-bottom');
+  const fTitulo = document.getElementById('f-titulo');
+  const fVersao = document.getElementById('f-versao');
+  const fPublico = document.getElementById('f-publico');
+  const fStatus = document.getElementById('f-status');
+  const btnFiltrar = document.getElementById('btn-filtrar');
+  const btnAdicionar = document.getElementById('btn-adicionar');
+
+  // Modal elements
+  const overlay = document.getElementById('overlay');
+  const modalTitle = document.getElementById('modal-title');
+  const eTitulo = document.getElementById('e-titulo');
+  const eVersao = document.getElementById('e-versao');
+  const eVigIni = document.getElementById('e-vig-ini');
+  const eVigFim = document.getElementById('e-vig-fim');
+  const eConteudo = document.getElementById('e-conteudo');
+  const btnClose = document.getElementById('btn-close');
+  const btnCancelar = document.getElementById('btn-cancelar');
+  const btnRascunho = document.getElementById('btn-rascunho');
+  const btnPublicar = document.getElementById('btn-publicar');
+
+  function currentPublicosFromModal(){
+    return Array.from(overlay.querySelectorAll('.checkbox:checked')).map(ch => ch.value);
+  }
+  function setPublicosInModal(arr){
+    Array.from(overlay.querySelectorAll('.checkbox')).forEach(ch => {
+      ch.checked = arr.includes(ch.value);
+    });
+  }
+
+  function aplicaFiltro(list){
+    return list.filter(r => {
+      const okTitulo = filtro.titulo ? r.titulo.toLowerCase().includes(filtro.titulo.toLowerCase()) : true;
+      const okVersao = filtro.versao ? r.versao.toLowerCase().includes(filtro.versao.toLowerCase()) : true;
+      const okPublico = filtro.publico ? r.publico.join(',').toLowerCase().includes(filtro.publico.toLowerCase()) : true;
+      const okStatus = filtro.status ? r.status === filtro.status : true;
+      return okTitulo && okVersao && okPublico && okStatus;
+    });
+  }
+
+  function render(){
+    const data = aplicaFiltro(rows);
+    tbody.innerHTML = '';
+    data.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>✏️</td>
+        <td>${r.titulo}</td>
+        <td>${r.versao}</td>
+        <td>${r.publico.join(', ')}</td>
+        <td>${r.vigenciaIni} — ${r.vigenciaFim}</td>
+        <td>${r.status}</td>
+        <td>${r.atualizadoEm}</td>
+        <td style="text-align:right">
+          <button class="btn" data-act="editar" data-id="${r.id}">Editar</button>
+          <button class="btn rose" data-act="excluir" data-id="${r.id}">Excluir</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+    const meta = data.length + ' registro(s)';
+    metaCount.textContent = meta;
+    metaCountBottom.textContent = meta;
+  }
+
+  function abrirModal(novo, row){
+    overlay.classList.add('show');
+    document.body.classList.add('lock-scroll');
+    overlay.setAttribute('aria-hidden','false');
+    modalTitle.textContent = novo ? 'Novo Termos' : 'Editar Termos';
+    const r = row || {id:null, titulo:'', versao:'', publico:[], vigenciaIni:'', vigenciaFim:'', status:'Rascunho', conteudo:'', anexos:[]};
+    eTitulo.value = r.titulo || '';
+    eVersao.value = r.versao || '';
+    eVigIni.value = r.vigenciaIni && r.vigenciaIni !== '—' ? r.vigenciaIni : '';
+    eVigFim.value = r.vigenciaFim && r.vigenciaFim !== '—' ? r.vigenciaFim : '';
+    eConteudo.value = r.conteudo || exemploConteudo;
+    setPublicosInModal(r.publico || []);
+    overlay.dataset.editingId = r.id == null ? '' : String(r.id);
+  }
+  function fecharModal(){
+    overlay.classList.remove('show');
+    document.body.classList.remove('lock-scroll');
+    overlay.setAttribute('aria-hidden','true');
+    overlay.dataset.editingId = '';
+  }
+
+  // Eventos
+  btnAdicionar.addEventListener('click', () => abrirModal(true));
+  btnFiltrar.addEventListener('click', () => {
+    filtro.titulo = fTitulo.value.trim();
+    filtro.versao = fVersao.value.trim();
+    filtro.publico = fPublico.value.trim();
+    filtro.status  = fStatus.value.trim();
+    render();
+  });
+  btnClose.addEventListener('click', fecharModal);
+  btnCancelar.addEventListener('click', fecharModal);
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('button');
+    if(!btn) return;
+    const act = btn.dataset.act;
+    if(act === 'editar'){
+      const id = Number(btn.dataset.id);
+      const row = rows.find(r => r.id === id);
+      if(row) abrirModal(false, row);
+    } else if(act === 'excluir'){
+      const id = Number(btn.dataset.id);
+      if(confirm('Excluir este registro?')){
+        rows = rows.filter(r => r.id !== id);
+        render();
+      }
+    }
+  });
+
+  btnRascunho.addEventListener('click', () => {
+    const id = overlay.dataset.editingId ? Number(overlay.dataset.editingId) : null;
+    const payload = {
+      id: id ?? (rows.reduce((m, r) => Math.max(m, r.id), 0) + 1),
+      titulo: eTitulo.value.trim() || 'Sem título',
+      versao: eVersao.value.trim() || '',
+      publico: currentPublicosFromModal(),
+      vigenciaIni: eVigIni.value || '—',
+      vigenciaFim: eVigFim.value || '—',
+      status: 'Rascunho',
+      atualizadoEm: new Date().toISOString().slice(0,16).replace('T',' '),
+      conteudo: eConteudo.value
+    };
+    if(id){
+      rows = rows.map(r => r.id === id ? payload : r);
+    } else {
+      rows = [payload, ...rows];
+    }
+    console.assert(rows.some(r => r.id === payload.id), '[TEST] Rascunho deve existir após salvar');
+    fecharModal();
+    render();
+  });
+
+  btnPublicar.addEventListener('click', () => {
+    const id = overlay.dataset.editingId ? Number(overlay.dataset.editingId) : null;
+    const payload = {
+      id: id ?? (rows.reduce((m, r) => Math.max(m, r.id), 0) + 1),
+      titulo: eTitulo.value.trim() || 'Sem título',
+      versao: eVersao.value.trim() || '',
+      publico: currentPublicosFromModal(),
+      vigenciaIni: eVigIni.value || '—',
+      vigenciaFim: eVigFim.value || '—',
+      status: 'Publicado',
+      atualizadoEm: new Date().toISOString().slice(0,16).replace('T',' '),
+      conteudo: eConteudo.value
+    };
+    if(id){
+      rows = rows.map(r => r.id === id ? payload : r);
+    } else {
+      rows = [payload, ...rows];
+    }
+    alert('(wireframe) Publicado — registrar aceite forçado no próximo login, conforme configuração.');
+    console.assert(rows.find(r => r.id === payload.id)?.status === 'Publicado', '[TEST] Item deve estar como Publicado após publicar');
+    fecharModal();
+    render();
+  });
+
+  // Testes simples
+  try{
+    console.assert(Array.isArray(rows) && rows.length >= 1, '[TEST] Deve haver mocks inicializados');
+    const t1 = rows.filter(r => r.titulo.toLowerCase().includes('termos'));
+    console.assert(t1.length >= 1, '[TEST] Deve retornar itens contendo "termos"');
+  }catch(e){ console.warn('TEST falhou', e); }
+
+  // Render inicial
+  render();
+})();
+</script>
+</body>
+</html>
